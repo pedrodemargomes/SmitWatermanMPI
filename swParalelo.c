@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 	MPI_Status status;
 
 	if(my_rank != 0) {
-		M = calloc( (numSeq1+1) * (numSeq2+1)*2, sizeof(int));
+		M = calloc( (numSeq1+1) * (numSeq2+1) * 2, sizeof(int));
 		seq1 = malloc(numSeq1*sizeof(char));
 		seq2 = malloc(numSeq2*sizeof(char));
 	}
@@ -136,10 +136,14 @@ int main(int argc, char *argv[]) {
 	MPI_Bcast(seq2, numSeq2, MPI_CHAR, 0, MPI_COMM_WORLD);
 
 	MPI_Datatype mysubarray;
-    MPI_Type_vector(s_block, s_block, numSeq2+1, MPI_INT, &mysubarray );
+	MPI_Type_vector(s_block, s_block, numSeq2+1, MPI_INT, &mysubarray );
+	//MPI_Type_create_subarray(2, array_size, array_subsize, array_start, MPI_ORDER_C, MPI_INT, &mysubarray);
 	MPI_Type_commit(&mysubarray);
 
+
+
 	if(my_rank == 0) {
+		int slaves[100];
 		printf("numDiagonais = %d\n", numDiagonais);
 		for(i =1; i <= numDiagonais; i++) {
 			numElementos = numElementosDiagonal(i,numSeq1/s_block,numSeq2/s_block);
@@ -150,64 +154,47 @@ int main(int argc, char *argv[]) {
 				pkg.ki = pi - j +1;
 				pkg.kj = pj + j -1;
 
-				MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+				MPI_Recv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+
+				slaves[j] = status.MPI_SOURCE;
 
 				printf("ki = %d kj = %d\n", pkg.ki,pkg.kj);
-				MPI_Send(&pkg, 2, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-				MPI_Send(&(M[((pkg.ki-1)*s_block)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), s_block, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD); // Manda linha de cima do bloco
-				MPI_Send(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block]), 1, col_matrix, status.MPI_SOURCE, 0, MPI_COMM_WORLD); // Manda coluna da esquerda do bloco
-
-				// TESTE
-				MPI_Recv(&testa,1,MPI_INT,status.MPI_SOURCE,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("testa1 = %d\n", testa);
-				MPI_Recv(&testa,1,MPI_INT,status.MPI_SOURCE,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("testa2 = %d\n", testa);
-				// TESTE << 
-
-				MPI_Recv(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), 1, mysubarray, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-				// TESTE
-				MPI_Recv(&testa,1,MPI_INT,status.MPI_SOURCE,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("testa3 = %d\n", testa);
-				// TESTE <<
-
-				// TESTE
-				int ii,jj;
-				for(ii=0;ii<numSeq1+1;ii++) {
-					for(jj=0;jj<numSeq2+1;jj++) {
-						printf("%d ", M[ii*(numSeq2+1)+jj]);
-					}
-					printf("\n");
-				}
-				// TESTE <<
-
-				// send++;
-				// if(send == n_procs)
-				// 	send = 1;
+				MPI_Send(&pkg, 2, MPI_INT, status.MPI_SOURCE, 2, MPI_COMM_WORLD);
+				MPI_Send(&(M[((pkg.ki-1)*s_block)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), s_block, MPI_INT, status.MPI_SOURCE, 3, MPI_COMM_WORLD); // Manda linha de cima do bloco
+				MPI_Send(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block]), 1, col_matrix, status.MPI_SOURCE, 4, MPI_COMM_WORLD); // Manda coluna da esquerda do bloco
 			}
+			for(j = 1;j <= numElementos; j++) {
+				pkg.ki = pi - j +1;
+				pkg.kj = pj + j -1;
+
+				MPI_Recv(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), 1, mysubarray, slaves[j], 5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+
+			// TESTE
+			int ii,jj;
+			for (ii = 0; ii < numSeq1+1; ++ii) {
+				for (jj = 0; jj < numSeq2+1; ++jj) {
+					printf("%d ", M[ii*(numSeq2+1) + jj]);
+				}
+				printf("\n");
+			}
+			// TESTE <<
 
 		}
 		pkg.ki = -1;
 		for(i= 1;i<n_procs; i++)
 			MPI_Send(&pkg, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
 	} else {
+		int bi,bj; // i e j do bloco
 		for(;;) {
-			int bi,bj; // i e j do bloco
+			MPI_Ssend(NULL, 0, MPI_INT, 0, 1, MPI_COMM_WORLD);
 
-			MPI_Send(NULL, 0, MPI_INT, 0, 0, MPI_COMM_WORLD);
-
-			MPI_Recv(&pkg,2,MPI_INT,0,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&pkg,2,MPI_INT,0,2,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			if(pkg.ki == -1)
 				break;
 
-			MPI_Recv(&(M[((pkg.ki-1)*s_block)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), s_block, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // Recebe linha de cima do bloco
-			MPI_Recv(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block]), 1, col_matrix, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // Recebe coluna da esquerda do bloco
-
-			// TESTE
-			testa = 6;
-			MPI_Send(&testa, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-			// TESTE <<
-
+			MPI_Recv(&(M[((pkg.ki-1)*s_block)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), s_block, MPI_INT, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // Recebe linha de cima do bloco
+			MPI_Recv(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block]), 1, col_matrix, 0, 4, MPI_COMM_WORLD, MPI_STATUS_IGNORE); // Recebe coluna da esquerda do bloco
 			// ++++++++ BLOCO +++++++++
 			for(bi=(pkg.ki-1)*s_block+1; bi < (pkg.ki-1)*s_block+1+s_block; bi++) {
 				for(bj=(pkg.kj-1)*s_block+1;bj < (pkg.kj-1)*s_block+1+s_block; bj++) {
@@ -215,23 +202,10 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			// +++++++++++++++++++++++++
-
-			// TESTE
-			testa = 66;
-			MPI_Send(&testa, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-			// TESTE <<
-
-			MPI_Send(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), 1, mysubarray, 0, 0, MPI_COMM_WORLD);
-
-			// TESTE
-			testa = 666;
-			MPI_Send(&testa, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-			// TESTE <<
-
+			MPI_Send(&(M[((pkg.ki-1)*s_block+1)*(numSeq2+1) + (pkg.kj-1)*s_block+1]), 1, mysubarray, 0, 5, MPI_COMM_WORLD);
 		}
 	}
 
-	
 	MPI_Finalize();
 
 	#ifdef DEBUG

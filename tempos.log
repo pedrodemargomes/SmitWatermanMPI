@@ -1,0 +1,46 @@
+entrada65536.txt MPI 32 7.714s
+entrada65536.txt MPI 16 NAO RODA(MEMORIA)
+entrada65536.txt MPI 8 NAO RODA(MEMORIA)
+entrada65536.txt MPI 4 NAO RODA(MEMORIA)
+entrada65536.txt MPI 2 NAO RODA(MEMORIA)
+entrada65536.txt MPI 1 NAO RODA(MEMORIA)
+entrada65536.txt SEQ   NAO RODA(MEMORIA)
+
+entrada32768.txt MPI 32 2.752s
+entrada32768.txt MPI 16 3.945s
+entrada32768.txt MPI 8 6.764s
+entrada32768.txt MPI 4 NAO RODA(MEMORIA)
+entrada32768.txt MPI 2 NAO RODA(MEMORIA)
+entrada32768.txt MPI 1 NAO RODA(MEMORIA)
+entrada32768.txt SEQ   7.645s
+
+entrada16384.txt MPI 32 1.425s
+entrada16384.txt MPI 16 1.631s
+entrada16384.txt MPI 8 2.238s
+entrada16384.txt MPI 4 3.357s
+entrada16384.txt MPI 2 4.368s
+entrada16384.txt MPI 1 4.088s
+entrada16384.txt SEQ   1.922s
+
+entrada8192.txt MPI 32 1.216s
+entrada8192.txt MPI 16 0.960s
+entrada8192.txt MPI 8 1.204s 
+entrada8192.txt MPI 4 1.459s 
+entrada8192.txt MPI 2 1.586s
+entrada8192.txt MPI 1 1.591s
+entrada8192.txt SEQ   0.482s
+
+entrada4096.txt MPI 32 1.169s
+entrada4096.txt MPI 16 0.879s
+entrada4096.txt MPI 8 0.836s
+entrada4096.txt MPI 4 0.939s
+entrada4096.txt MPI 2 0.958s
+entrada4096.txt MPI 1 0.998s
+entrada4096.txt SEQ   0.125s
+
+
+
+
+
+
+

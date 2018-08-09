@@ -82,9 +82,13 @@ void complexcompare(struct Maior * in, struct Maior * inout, int * len, MPI_Data
 	int i;
   	struct Maior c;
   	for (i = 0; i < *len; i++) {
-  	  if(in->val > inout->val) {
+  	  if(in->val >= inout->val) {
   	    	/* compares the module of the complex in *in and the complex in *inout */
-  	    	*inout = *in;
+  	    	if(in->val == inout->val) {	
+  	    		if(in->rank < inout->rank)
+  	    			*inout = *in;
+  	    	} else
+  	    		*inout = *in;
   	 	}
   		in++;
 		inout++;
@@ -136,8 +140,6 @@ int main(int argc, char *argv[]) {
 
 	M = calloc( (tamBlocos+1)*(numSeq1+1), sizeof(int));
 	direc = malloc( (tamBlocos+1)*(numSeq1+1)* sizeof(struct Direcao));
-	
-	//while(1) {}
 
 	MPI_Request reqSend;
 
@@ -177,6 +179,9 @@ int main(int argc, char *argv[]) {
 		}
 
 	}
+
+	//printf("chegou rank = %d\n", my_rank);
+	//while(1){}
 
 	// if(my_rank == 0) {
 	//  	printf("++++++++++++++ rank = %d\n",my_rank);
@@ -296,7 +301,7 @@ int main(int argc, char *argv[]) {
 			printf("%s\n",respSeq1 );
 			printf("%s\n",respSeq2 );
 			// while(1){}
-			#endif DEBUG
+			#endif
 			if(my_rank != 0) {
 				j = -1;
 				MPI_Send( &j , 1, MPI_INT, my_rank-1, 0, MPI_COMM_WORLD ); // FIM
@@ -314,6 +319,9 @@ int main(int argc, char *argv[]) {
 		//printf("FIM rank = %d\n", my_rank);
 	}
 
+
+
+	// printf("Termina rank = %d\n", my_rank);
 
 	// #ifdef DEBUG
 	// if(my_rank == 1) {
